@@ -45,7 +45,7 @@ class InitialBlock(QuantileBlock):
                 element_rank_pairs.append(el, len(self.elements))
         return element_rank_pairs
     
-    def compress(self) -> SummaryBlock:
+    def compress(self):
         element_rank_pairs = self.list_to_ranks()
         return SummaryBlock.make_from_initial(self.max_size, element_rank_pairs)
 
@@ -65,8 +65,16 @@ class SummaryBlock(QuantileBlock):
         new_block.max_element = new_block.elements[-1]
         return new_block
     
-    def compress(self):
+    def compress(self) -> SummaryBlock:
         new_block = SummaryBlock(self.max_size, 1.0/self.max_size)
+        ix = [0] + [i for i in range(1, len(self.elements) - 1, 2)] + [len(self.elements) - 1]
+        new_block.elements = [self.elements[i] for i in ix]
+        new_block.max_element = self.max_element
+        return new_block
+    
+    def merge(self, other_summary: SummaryBlock) -> SummaryBlock:
+        pass
+
 
 
     
