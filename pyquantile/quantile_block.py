@@ -1,20 +1,20 @@
-
+from typing import List, Tuple
 from pyquantile.quantile_element import QuantileElement
 
 
 class QuantileBlock:
-    def __init__(self, max_size: int):
+    def __init__(self, max_size: int) -> None:
         self.max_size = max_size
         self.elements = []
         self.max_element = -2
 
-    def insert(self, value):
+    def insert(self, value: float) -> None:
         raise NotImplementedError
 
     def compress(self):
         raise NotImplementedError
 
-    def merge(self):
+    def merge(self, other_summary):
         raise NotImplementedError
 
 
@@ -30,7 +30,7 @@ class InitialBlock(QuantileBlock):
         if len(self.elements) > self.max_size:
             self.compress()
 
-    def list_to_ranks(self):
+    def list_to_ranks(self) -> List[Tuple[float]]:
         self.elements.sort()
         element_rank_pairs = []
         unique_elements = set()
@@ -45,11 +45,11 @@ class InitialBlock(QuantileBlock):
                 element_rank_pairs.append(el, len(self.elements))
         return element_rank_pairs
     
-    def compress(self):
+    def compress(self) -> SummaryBlock:
         element_rank_pairs = self.list_to_ranks()
         return SummaryBlock.make_from_initial(self.max_size, element_rank_pairs)
 
-    def merge(self, other_summary):
+    def merge(self, other_summary: SummaryBlock) -> SummaryBlock:
         block = self.compress()
         return block.merge(other_summary)
 
@@ -59,9 +59,11 @@ class SummaryBlock(QuantileBlock):
         self.error = error
 
     @classmethod
-    def make_from_initial(cls, max_size: int, element_rank_pairs):
+    def make_from_initial(cls, max_size: int, element_rank_pairs: List[Tuple[float]] ) -> SummaryBlock:
         new_block = cls(max_size, 0)
         new_block.elements = [QuantileElement(value, rank, rank) for value, rank in element_rank_pairs.items()]
+        new_block.max_element = new_block.elements[-1]
+        return new_block
     
     def compress(self):
         new_block = SummaryBlock(self.max_size, 1.0/self.max_size)
